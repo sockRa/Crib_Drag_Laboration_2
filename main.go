@@ -29,10 +29,10 @@ func main() {
 		//Crib drag the guess on cipherXOR
 		fmt.Printf("\n\n~~~~~~~~~~~~[ Message %d XOR Message %d ]~~~~~~~~~~~~\n", i+1, len(ciphers))
 		CribSearch(cipherXOR, guess)
-		fmt.Printf("%s\n", EncodeHexBytes(cipherXOR))
+		//fmt.Printf("%s\n", EncodeHexBytes(cipherXOR))
 	}
 
-	//main()
+	main()
 }
 
 //CribSearch will XOR crib with target and print the equivilent ASCII
@@ -41,9 +41,9 @@ func CribSearch(cipherText, crib []byte) {
 	var leftSlice int
 	var rightSlice int
 	//calculateEntropy = true
-	loopLength := (len(cipherText) - len(crib))
+	//loopLength := (len(cipherText) - len(crib))
 
-	for i := 0; i <= loopLength; i++ {
+	for i := 0; i < 1; i++ { //loopLength; i++ {
 
 		// Initial assignment for choosing the slice-length of the cipher text, based on the length of the crib word.
 		if i == 0 {
@@ -75,7 +75,7 @@ func CribSearch(cipherText, crib []byte) {
 		}
 
 		// Print result from crib drag with optional entropy
-		fmt.Printf("\t[%d] => %s\t", i, res)
+		fmt.Printf("=> %s\t", res)
 
 	}
 }
@@ -124,7 +124,7 @@ func AddZeroes(a []byte, size int) []byte {
 	temp := make([]byte, len(a)+size)
 
 	for i := 0; i < len(a); i++ {
-		temp = append(temp[:i+size], a[i])
+		temp[i] = a[i]
 	}
 	return temp
 }
