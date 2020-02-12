@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"os"
-	"regexp"
 )
 
-var isStringAlphaNumeric = regexp.MustCompile(`^[a-zA-Z0-9_]*$`).MatchString
+//var isStringAlphaNumeric = regexp.MustCompile(`^[a-zA-Z0-9_]*$`).MatchString
+//var calculateEntropy = false
 
 func main() {
 
@@ -18,40 +19,31 @@ func main() {
 	targetCipher := DecodeHexBytes([]byte(ciphers[len(ciphers)-1]))
 
 	//Step 1: Enter a guess
-	guess := []byte("hej") //AskForGuess()
+	guess := AskForGuess()
 
 	for i := 0; i < len(ciphers)-1; i++ {
 		//XOR cipher[i] with targetCipher
 		cipher := DecodeHexBytes([]byte(ciphers[i]))
-		cipherXOR := StringXOR(cipher, targetCipher)
-		fmt.Printf("Hex cipher: %s\n", EncodeHexBytes(cipherXOR))
-
-		//fmt.Printf("\n%s XOR %s => %s\n", EncodeHexBytes(cipher), EncodeHexBytes(targetCipher), EncodeHexBytes(cipherXOR))
+		cipherXOR := StringXOR(cipher, targetCipher) //, calculateEntropy)
 
 		//Crib drag the guess on cipherXOR
-		fmt.Printf("~~~~~~~~~~~~[ Message %d XOR Message %d ]~~~~~~~~~~~~\n\n", i+1, len(ciphers))
+		fmt.Printf("\n\n~~~~~~~~~~~~[ Message %d XOR Message %d ]~~~~~~~~~~~~\n", i+1, len(ciphers))
 		CribSearch(cipherXOR, guess)
+		fmt.Printf("%s\n", EncodeHexBytes(cipherXOR))
 	}
 
-	main()
+	//main()
 }
 
 //CribSearch will XOR crib with target and print the equivilent ASCII
 func CribSearch(cipherText, crib []byte) {
 
-	/*if len(cipherText) == len(crib) {
-		res = StringXOR(cipherText, crib)
-		fmt.Printf("\nFinal message => %s\n NOTE: Enter the final message to get the plaintext from the other cyphertext\n", res)
-	}*/
-
-	//Calculate the maximum iterations needed for completion
-	//maxIterations := math.Ceil(float64(len(cipherText)) / float64(len(crib)))
-
 	var leftSlice int
 	var rightSlice int
-	//var rightCribSlice int
+	//calculateEntropy = true
+	loopLength := (len(cipherText) - len(crib))
 
-	for i := 0; i < (len(cipherText) - len(crib) + 1); i++ {
+	for i := 0; i <= loopLength; i++ {
 
 		// Initial assignment for choosing the slice-length of the cipher text, based on the length of the crib word.
 		if i == 0 {
@@ -60,25 +52,31 @@ func CribSearch(cipherText, crib []byte) {
 		} else {
 			// We want the slice to move in equally large steps as the crib-length
 			// this is a preperation for the XOR operation with the crib value
-			leftSlice++  //= float64(len(crib) * i)
-			rightSlice++ //= float64(len(crib) * (i + 1))
+			leftSlice++
+			rightSlice++
 
 			if int(rightSlice) > len(cipherText) {
 				rightSlice = len(cipherText)
 			}
 		}
 
-		//right crib slice assigment
-		/*if leftSlice+len(crib) > len(cipherText) {
-			rightCribSlice = (leftSlice + len(crib)) - len(cipherText)
-		} else {
-			rightCribSlice = len(crib)
-		}*/
-
+		// Extract the prepared slice from the ciphertext
 		cipherTextSlice := cipherText[int(leftSlice):int(rightSlice)]
-		//cribSlice := crib[:int(rightCribSlice)]
-		res := StringXOR(cipherTextSlice, crib)
-		fmt.Printf("[%d] => %s\n", i, res)
+
+		// Perform XOR with the ciphertext slice together with the crib.
+		// Optional: Calculate the entropy for each word
+		// If the entropy is low, it could suggest that the output is a word in english
+		// and not jibberish.
+		res := StringXOR(cipherTextSlice, crib) //, calculateEntropy)
+
+		// Configure this to change the number of rows that you want to display.
+		if i%3 == 0 && i != 0 {
+			fmt.Printf("\n")
+		}
+
+		// Print result from crib drag with optional entropy
+		fmt.Printf("\t[%d] => %s\t", i, res)
+
 	}
 }
 
@@ -96,7 +94,28 @@ func StringXOR(a, b []byte) []byte {
 		result[i] = a[i] ^ b[i]
 	}
 
+	// If this method StringXOR is called when performin crib drag
+	// this bool should be true if the user want's to calculate
+	// the entropy on the output after the crib drag operation.
+
 	return result
+}
+
+//CalculateEntropy will calculate the average byte in the result
+func CalculateEntropy(result []byte) float64 {
+	var totalEntropy float64
+
+	for i := 0; i < len(result)-1; i++ {
+		//Filter out space in the calculation
+		if int(result[i]) != 32 {
+			// Calculate the difference between each byte
+			totalEntropy += math.Abs(float64(result[i]) - float64(result[i+1]))
+		}
+	}
+
+	// Return the total difference divided by the length of the string
+	// if the score is low, it could suggest that the output is a possible word.
+	return totalEntropy / float64(len(result))
 }
 
 //AddZeroes adds zeros to the array and returns the result
@@ -130,21 +149,20 @@ func EncodeHexBytes(input []byte) []byte {
 // AskForGuess asks the user to submit a guess of what word the ciphertext may contain
 func AskForGuess() []byte {
 
-	fmt.Println("\nGuess a word that might appear in one of the ciphertext's")
+	fmt.Println("\n\nGuess a word that might appear in one of the ciphertext's")
 	fmt.Print("-> ")
 
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
 	text := []byte(scanner.Text())
 
-	//return EncodeHexBytes(text)
 	return text
 }
 
 //ReadCipherTextFromFile will read the given ciphertexts and add them to a string array.
 func ReadCipherTextFromFile() []string {
 
-	file, err := os.Open("Ciphers_debug")
+	file, err := os.Open("Ciphers")
 
 	if err != nil {
 		fmt.Printf("failed opening file: %s", err)
