@@ -30,30 +30,8 @@ func main() {
 //CribSearch will XOR crib with target and print the equivilent ASCII
 func CribSearch(cipherText, crib []byte) {
 
-	var leftSlice int
-	var rightSlice int
-
-	for i := 0; i < 1; i++ { //loopLength; i++ {
-
-		// Initial assignment for choosing the slice-length of the cipher text, based on the length of the crib word.
-		if i == 0 {
-			leftSlice = 0
-			rightSlice = len(crib)
-		} else {
-			leftSlice++
-			rightSlice++
-
-			/*if int(rightSlice) > len(cipherText) {
-				rightSlice = len(cipherText)
-			}*/
-		}
-
-		// Extract the prepared slice from the ciphertext
-		cipherTextSlice := cipherText[int(leftSlice):int(rightSlice)]
-		res := StringXOR(cipherTextSlice, crib)
-		fmt.Printf("=> %s\t", res)
-
-	}
+	res := StringXOR(cipherText[:len(crib)], crib)
+	fmt.Printf("=> %s\t", res)
 }
 
 //StringXOR will perfom XOR on two byte arrays and return the result
